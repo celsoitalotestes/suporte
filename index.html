@@ -1,0 +1,127 @@
+#<!-- <meta charset="UTF-8"> #--> 
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8 
+clear-host 
+Write-Host "==================================================" -ForegroundColor Cyan 
+Write-Host "         BIPNET - FERRAMENTAS DE SUPORTE          " -ForegroundColor Cyan 
+Write-Host "==================================================" -ForegroundColor Cyan 
+Write-Host "" 
+Write-Host "1) Abrir Otimizador Winutil" 
+Write-Host "2) Instalar Navegadores (Chrome e Brave Simultaneos)" 
+Write-Host "3) Instalar Ferramentas (Simultaneas)" 
+Write-Host "4) Aplicar Papel de Parede Padrao (Agora)" 
+Write-Host "5) Instalacao Completa Automatizada (Simultanea + Wallpaper)" 
+Write-Host "6) Ativadores (Office e Windows)" 
+Write-Host "7) Abrir Gerenciador de Usuarios (Netplwiz)" 
+Write-Host "" 
+$opcao = Read-Host "Digite o numero da opcao desejada" 
+
+# Bloco de monitoramento das instalacoes em segundo plano
+$MonitorarInstalacoes = {
+    Write-Host "`nAGUARDANDO INSTALACOES EM SEGUNDO PLANO..." -ForegroundColor Yellow
+    Write-Host "Nao feche esta janela. Os icones vao aparecer na Area de Trabalho." -ForegroundColor Gray
+    
+    # Aguarda 5 segundos iniciais para os processos darem o start no Windows
+    Start-Sleep -Seconds 5
+    
+    # Loop que verifica se o winget ainda esta trabalhando ativamente
+    while (Get-Process -Name "winget" -ErrorAction SilentlyContinue) {
+        Write-Host "." -NoNewline -ForegroundColor Cyan
+        Start-Sleep -Seconds 3
+    }
+    Write-Host "`n[OK] Todos os instaladores de fundo foram finalizados!" -ForegroundColor Green
+}
+
+# Bloco reutilizavel para aplicar o papel de parede imediatamente 
+$ScriptBlockWallpaper = { 
+    Write-Host "`nBaixando e aplicando o papel de parede corporativo..." -ForegroundColor Green 
+    $NomeImagem = "wallpaper.png" 
+    $UrlImagem = "https://absnetfibra.com.br/suporte/wallpaper.png" 
+    $PastaImagens = [System.IO.Path]::Combine([Environment]::GetFolderPath("MyPictures")) 
+    $CaminhoDestino = Join-Path $PastaImagens $NomeImagem 
+    try { 
+        # Utiliza o método nativo moderno para evitar quebras por concorrência de rede
+        Invoke-WebRequest -Uri $UrlImagem -OutFile $CaminhoDestino -UserAgent "Mozilla/5.0" -ErrorAction Stop
+        
+        if ((Get-Item $CaminhoDestino).Length -lt 5120) { throw "O arquivo baixado esta incompleto." } 
+        
+        $CsharpCodigo = @" 
+        using System; 
+        using System.Runtime.InteropServices; 
+        public class Wallpaper { 
+            [DllImport("user32.dll", CharSet = CharSet.Auto)] 
+            public static extern int SystemParametersInfo(int uAction, int uParam, string lvParam, int fuWinIni); 
+        } 
+"@ 
+        Add-Type -TypeDefinition $CsharpCodigo -ErrorAction SilentlyContinue 
+        [Wallpaper]::SystemParametersInfo(20, 0, $CaminhoDestino, 3) 
+        Write-Host "Papel de parede aplicado com sucesso!" -ForegroundColor Cyan 
+    } catch { 
+        Write-Host "Erro ao aplicar identidade visual: $_" -ForegroundColor Red 
+    } 
+} 
+
+switch ($opcao) { 
+    1 { 
+        Write-Host "Iniciando Chris Titus Winutil..." -ForegroundColor Green 
+        irm "https://christitus.com/win" | iex 
+    } 
+    2 { 
+        Write-Host "Disparando instalacao dos navegadores..." -ForegroundColor Green 
+        Start-Process winget -ArgumentList "install --id Google.Chrome -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Mozilla.Firefox -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        & $MonitorarInstalacoes
+        Read-Host "`nProcesso concluido! Pressione Enter para voltar."
+    } 
+    3 { 
+        Write-Host "Disparando instalacao de todas as ferramentas..." -ForegroundColor Green 
+        Start-Process winget -ArgumentList "install --id 7zip.7zip -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id AnyDeskSoftwareGmbH.AnyDesk -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id MicroSIP.MicroSIP -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Foxit.FoxitReader -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Skillbrains.Lightshot -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Brother.iPrintScan -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Cyanfish.NAPS2.Prerelease -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id RustDesk.RustDesk -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        & $MonitorarInstalacoes
+        Read-Host "`nProcesso concluido! Pressione Enter para voltar."
+    } 
+    4 { 
+        & $ScriptBlockWallpaper 
+        Read-Host "`nProcesso concluido! Pressione Enter para voltar."
+    } 
+    5 { 
+        Write-Host "=== INICIANDO INSTALACAO AUTOMATIZADA COMPLETA ===" -ForegroundColor Yellow 
+        Write-Host "`nDisparando programas em paralelo..." -ForegroundColor Magenta 
+        
+        Start-Process winget -ArgumentList "install --id Google.Chrome -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Mozilla.Firefox -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id 7zip.7zip -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id AnyDeskSoftwareGmbH.AnyDesk -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id MicroSIP.MicroSIP -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Foxit.FoxitReader -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Skillbrains.Lightshot -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Brother.iPrintScan -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id Cyanfish.NAPS2.Prerelease -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        Start-Process winget -ArgumentList "install --id RustDesk.RustDesk -e -s winget --silent --accept-source-agreements --accept-package-agreements" -NoNewWindow 
+        
+        # Monitora a fila de instalações e segura o script aqui até terminar tudo
+        & $MonitorarInstalacoes
+        
+        # Aplica o papel de parede APÓS as instalações limparem a banda de internet
+        & $ScriptBlockWallpaper 
+        
+        Write-Host "`n==================================================" -ForegroundColor Green
+        Write-Host "      TODO O CIRCUITO FOI INSTALADO COM SUCESSO!  " -ForegroundColor Green 
+        Write-Host "==================================================" -ForegroundColor Green
+        Write-Host "=== NAO ESQUECA DE INSTALAR O PACOTE OFFICE ===" -ForegroundColor Red 
+        Read-Host "`nPressione Enter para finalizar."
+    } 
+    6 { 
+        Write-Host "Iniciando Ativadores..." -ForegroundColor Green 
+        irm "https://activated.win" | iex 
+    } 
+    7 { 
+        Write-Host "Abrindo painel de contas netplwiz..." -ForegroundColor Green 
+        Start-Process "netplwiz.exe" 
+    } 
+}
